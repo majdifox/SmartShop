@@ -23,17 +23,15 @@ public class User {
     @Column(nullable = false)
     private String password;
 
-    @Enumerated(EnumType.STRING)  // Store enum as "ADMIN" or "CLIENT" (not 0, 1)
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private UserRole role;
-
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private Client client;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
-
 
     @PrePersist
     protected void onCreate() {
