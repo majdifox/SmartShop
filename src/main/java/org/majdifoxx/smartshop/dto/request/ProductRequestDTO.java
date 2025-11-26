@@ -1,4 +1,4 @@
-package org.majdifoxx.smartshop.dto;
+package org.majdifoxx.smartshop.dto.request;
 
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
