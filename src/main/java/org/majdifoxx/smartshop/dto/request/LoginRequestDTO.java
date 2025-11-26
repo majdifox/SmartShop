@@ -1,13 +1,11 @@
-package org.majdifoxx.smartshop.dto;
+package org.majdifoxx.smartshop.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * Request body for login endpoint
- */
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
