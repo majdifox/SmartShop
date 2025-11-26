@@ -1,4 +1,4 @@
-package org.majdifoxx.smartshop.dto;
+package org.majdifoxx.smartshop.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.majdifoxx.smartshop.enums.PaymentMethod;
 import org.majdifoxx.smartshop.enums.PaymentStatus;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -14,10 +15,11 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+
 public class PaymentResponseDTO {
 
-    private String id;
-    private String orderId;
+    private Long id;
+    private Long orderId;
     private Integer paymentNumber;
     private BigDecimal amount;
     private PaymentMethod paymentMethod;
