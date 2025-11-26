@@ -1,4 +1,4 @@
-package org.majdifoxx.smartshop.dto;
+package org.majdifoxx.smartshop.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -6,18 +6,15 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.majdifoxx.smartshop.enums.UserRole;
 
-/**
- * Response after successful login
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class LoginResponseDTO {
 
-    private String userId;
+    private Long userId;
     private String username;
     private UserRole role;
-    private String clientId;  // null for ADMIN users
+    private Long clientId;   // null for ADMIN
     private String message;
 }
