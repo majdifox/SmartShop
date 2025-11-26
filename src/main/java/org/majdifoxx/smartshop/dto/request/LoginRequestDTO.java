@@ -1,0 +1,21 @@
+package org.majdifoxx.smartshop.dto;
+
+import jakarta.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+/**
+ * Request body for login endpoint
+ */
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class LoginRequestDTO {
+
+    @NotBlank(message = "Username is required")
+    private String username;
+
+    @NotBlank(message = "Password is required")
+    private String password;
+}
