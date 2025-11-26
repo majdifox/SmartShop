@@ -1,4 +1,4 @@
-package org.majdifoxx.smartshop.dto;
+package org.majdifoxx.smartshop.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @Builder
 public class ProductResponseDTO {
 
-    private String id;
+    private Long id;
     private String name;
     private String description;
     private BigDecimal unitPrice;
