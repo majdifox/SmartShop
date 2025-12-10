@@ -37,7 +37,7 @@ public class Payment {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default
-    private PaymentStatus status = PaymentStatus.PENDING;
+    private PaymentStatus status = PaymentStatus.EN_ATTENTE;
 
     @Column(length = 50)
     private String reference;
