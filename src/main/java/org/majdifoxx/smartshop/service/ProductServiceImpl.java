@@ -39,7 +39,6 @@ public class ProductServiceImpl implements ProductService {
     public Page<ProductResponseDTO> getActiveProducts(String search, Pageable pageable) {
         Page<Product> products;
 
-        // PDF: "Consulter la liste des produits avec filtres et pagination"
         if (search != null && !search.trim().isEmpty()) {
             products = productRepository.findByNameContainingIgnoreCaseAndDeletedFalse(search, pageable);
         } else {
@@ -61,7 +60,6 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public void deleteProduct(Long id) {
-        // PDF: "Supprimer des produits (soft delete)"
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
 
@@ -82,7 +80,6 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public void decrementStock(Product product, Integer quantity) {
-        // PDF: "Décrémenter le stock produits"
         product.setStock(product.getStock() - quantity);
         productRepository.save(product);
     }

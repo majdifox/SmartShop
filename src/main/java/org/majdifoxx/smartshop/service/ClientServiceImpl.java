@@ -49,7 +49,6 @@ public class ClientServiceImpl implements ClientService {
                 .role(UserRole.CLIENT)
                 .build();
 
-        // SAVE USER FIRST (important!)
         User savedUser = userRepository.save(user);
 
         // Create Client entity
@@ -103,17 +102,15 @@ public class ClientServiceImpl implements ClientService {
 
     @Override
     public void updateClientStatsAfterOrderConfirmation(Client client, BigDecimal orderTotalTTC) {
-        // PDF: "Suivre automatiquement: Statistiques (totalOrders, totalSpent)"
+
         client.setTotalOrders(client.getTotalOrders() + 1);
         client.setTotalSpent(client.getTotalSpent().add(orderTotalTTC));
 
-        // PDF: "Date de première et dernière commande"
         client.setLastOrderDate(LocalDateTime.now());
         if (client.getFirstOrderDate() == null) {
             client.setFirstOrderDate(LocalDateTime.now());
         }
 
-        // PDF: "Mise à jour du niveau après chaque commande confirmée"
         CustomerTier newTier = loyaltyService.calculateTier(client);
         client.setTier(newTier);
 

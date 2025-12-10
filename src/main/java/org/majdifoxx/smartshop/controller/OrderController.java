@@ -11,6 +11,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
+
+import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -105,4 +107,18 @@ public class OrderController {
         OrderResponseDTO response = orderService.cancelOrder(id);
         return ResponseEntity.ok(response);
     }
+
+//    @GetMapping("/tva")
+//
+//public ResponseEntity<BigDecimal> calculateTotalTVA(){
+//
+//        return ResponseEntity.ok(orderService.calculateTVA());
+//    }
+//
+//
+//    public ResponseEntity<BigDecimal> calculateTVA(){
+//
+//        return ResponseEntity.ok(orderService.calcTVA());
+//    }
+
 }

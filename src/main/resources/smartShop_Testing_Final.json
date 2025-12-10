@@ -1,0 +1,2842 @@
+{
+  "info": {
+    "_postman_id": "smartshopX",
+    "name": "SmartShop - COMPLETE Testing Collection",
+    "description": "Full test suite for ALL SmartShop endpoints - Auth, Clients, Products, Orders, Payments, PromoCodes with comprehensive pass/fail tests",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080/api"
+    },
+    {
+      "key": "newClientId",
+      "value": ""
+    },
+    {
+      "key": "newProductId",
+      "value": ""
+    },
+    {
+      "key": "newOrderId",
+      "value": ""
+    },
+    {
+      "key": "newPaymentId",
+      "value": ""
+    },
+    {
+      "key": "newPromoId",
+      "value": ""
+    },
+    {
+      "key": "uniqueEmail",
+      "value": ""
+    },
+    {
+      "key": "uniqueUsername",
+      "value": ""
+    },
+    {
+      "key": "clientUserId",
+      "value": ""
+    },
+    {
+      "key": "testOrderForPayment",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "PHASE 1 - Authentication",
+      "item": [
+        {
+          "name": "1.1 Login as ADMIN ✅",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has userId', () => pm.expect(pm.response.json().userId).to.exist);",
+                  "pm.test('Role is ADMIN', () => pm.expect(pm.response.json().role).to.eql('ADMIN'));",
+                  "pm.test('Response has username', () => pm.expect(pm.response.json().username).to.exist);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"username\":\"admin\",\"password\":\"admin123\"}"
+            },
+            "url": "{{baseUrl}}/auth/login"
+          }
+        },
+        {
+          "name": "1.2 Login as CLIENT ✅",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Role is CLIENT', () => pm.expect(pm.response.json().role).to.eql('CLIENT'));",
+                  "pm.test('Has clientId', () => pm.expect(pm.response.json().clientId).to.exist);",
+                  "pm.collectionVariables.set('clientUserId', pm.response.json().clientId);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"username\":\"amine_tech\",\"password\":\"pass123\"}"
+            },
+            "url": "{{baseUrl}}/auth/login"
+          }
+        },
+        {
+          "name": "1.3 Login Wrong Password ❌",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 403', () => pm.response.to.have.status(403));",
+                  "pm.test('Error message exists', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.message || body.error).to.exist;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"username\":\"admin\",\"password\":\"wrongpassword\"}"
+            },
+            "url": "{{baseUrl}}/auth/login"
+          }
+        },
+        {
+          "name": "1.4 Login Non-Existent User ❌",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 403 or 404', () => pm.response.to.have.status.oneOf([403, 404]));",
+                  "pm.test('Error message exists', () => pm.expect(pm.response.json().message || pm.response.json().error).to.exist);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"username\":\"nonexistent_user_xyz\",\"password\":\"whatever\"}"
+            },
+            "url": "{{baseUrl}}/auth/login"
+          }
+        },
+        {
+          "name": "1.5 Get Current User Info ✅",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.sendRequest({",
+                  "  url: pm.variables.get('baseUrl') + '/auth/login',",
+                  "  method: 'POST',",
+                  "  header: {'Content-Type': 'application/json'},",
+                  "  body: {mode: 'raw', raw: JSON.stringify({username: 'admin', password: 'admin123'})}",
+                  "}, () => {});"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has username', () => pm.expect(pm.response.json().username).to.exist);",
+                  "pm.test('Has role', () => pm.expect(pm.response.json().role).to.exist);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/auth/me"
+          }
+        },
+        {
+          "name": "1.6 Logout ✅",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Success message', () => pm.expect(pm.response.text()).to.include('success'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/logout"
+          }
+        },
+        {
+          "name": "1.7 Get User Info After Logout ❌",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 401 or 403', () => pm.response.to.have.status.oneOf([401, 403]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/auth/me"
+          }
+        }
+      ]
+    },
+    {
+      "name": "PHASE 2 - Client Management",
+      "item": [
+        {
+          "name": "LOGIN ADMIN (Prerequisite)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Admin logged in', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"username\":\"admin\",\"password\":\"admin123\"}"
+            },
+            "url": "{{baseUrl}}/auth/login"
+          }
+        },
+        {
+          "name": "2.1 Create Client ✅",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const timestamp = Date.now();",
+                  "pm.collectionVariables.set('uniqueEmail', `autotest${timestamp}@test.ma`);",
+                  "pm.collectionVariables.set('uniqueUsername', `autotest_${timestamp}`);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Has ID', () => pm.expect(pm.response.json().id).to.exist);",
+                  "pm.test('Tier is BASIC', () => pm.expect(pm.response.json().tier).to.eql('BASIC'));",
+                  "pm.test('TotalOrders is 0', () => pm.expect(pm.response.json().totalOrders).to.eql(0));",
+                  "pm.test('TotalSpent is 0', () => pm.expect(pm.response.json().totalSpent).to.eql(0));",
+                  "pm.test('Has name', () => pm.expect(pm.response.json().name).to.exist);",
+                  "pm.test('Has email', () => pm.expect(pm.response.json().email).to.exist);",
+                  "pm.collectionVariables.set('newClientId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\":\"AutoTest Company\",\"email\":\"{{uniqueEmail}}\",\"phone\":\"+212678901234\",\"address\":\"Rabat, Morocco\",\"username\":\"{{uniqueUsername}}\",\"password\":\"pass123\"}"
+            },
+            "url": "{{baseUrl}}/clients"
+          }
+        },
+        {
+          "name": "2.2 Create Client - Duplicate Email ❌",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 422', () => pm.response.to.have.status(422));",
+                  "pm.test('Error mentions email', () => {",
+                  "  const body = pm.response.json();",
+                  "  const msg = body.message || body.error || '';",
+                  "  pm.expect(msg.toLowerCase()).to.include('email');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\":\"Duplicate Client\",\"email\":\"amine@techsolutions.ma\",\"phone\":\"+212600000000\",\"address\":\"Test\",\"username\":\"dup_test\",\"password\":\"pass123\"}"
+            },
+            "url": "{{baseUrl}}/clients"
+          }
+        },
+        {
+          "name": "2.3 Create Client - Invalid Email ❌",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 400 or 422', () => pm.response.to.have.status.oneOf([400, 422]));",
+                  "pm.test('Error mentions email validation', () => {",
+                  "  const body = pm.response.json();",
+                  "  const msg = JSON.stringify(body).toLowerCase();",
+                  "  pm.expect(msg).to.satisfy(m => m.includes('email') || m.includes('valid'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\":\"Invalid Email Client\",\"email\":\"notanemail\",\"username\":\"invalid_email\",\"password\":\"pass\"}"
+            },
+            "url": "{{baseUrl}}/clients"
+          }
+        },
+        {
+          "name": "2.4 Create Client - Missing Required Fields ❌",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 400 or 422', () => pm.response.to.have.status.oneOf([400, 422]));",
+                  "pm.test('Error indicates missing fields', () => pm.expect(pm.response.json()).to.exist);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\":\"Incomplete Client\"}"
+            },
+            "url": "{{baseUrl}}/clients"
+          }
+        },
+        {
+          "name": "2.5 Get All Clients ✅",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Returns array', () => pm.expect(pm.response.json()).to.be.an('array'));",
+                  "pm.test('Has at least 3 clients', () => pm.expect(pm.response.json().length).to.be.at.least(3));",
+                  "pm.test('Each client has required fields', () => {",
+                  "  const clients = pm.response.json();",
+                  "  clients.forEach(c => {",
+                  "    pm.expect(c.id).to.exist;",
+                  "    pm.expect(c.name).to.exist;",
+                  "    pm.expect(c.tier).to.exist;",
+                  "  });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/clients"
+          }
+        },
+        {
+          "name": "2.6 Get Client by ID ✅",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has tier', () => pm.expect(pm.response.json().tier).to.exist);",
+                  "pm.test('Has statistics', () => {",
+                  "  const client = pm.response.json();",
+                  "  pm.expect(client.totalOrders).to.exist;",
+                  "  pm.expect(client.totalSpent).to.exist;",
+                  "});",
+                  "pm.test('Has contact info', () => {",
+                  "  const client = pm.response.json();",
+                  "  pm.expect(client.name).to.exist;",
+                  "  pm.expect(client.email).to.exist;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/clients/2"
+          }
+        },
+        {
+          "name": "2.7 Get Client by ID - Non-Existent ❌",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 404', () => pm.response.to.have.status(404));",
+                  "pm.test('Error message exists', () => pm.expect(pm.response.json().message).to.exist);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/clients/999999"
+          }
+        },
+        {
+          "name": "2.8 Update Client ✅",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Updated data returned', () => {",
+                  "  const client = pm.response.json();",
+                  "  pm.expect(client.id).to.exist;",
+                  "  pm.expect(client.name).to.exist;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\":\"Updated Company Name\",\"email\":\"amine@techsolutions.ma\",\"phone\":\"+212612345678\",\"address\":\"Updated Address, Casablanca\"}"
+            },
+            "url": "{{baseUrl}}/clients/2"
+          }
+        },
+        {
+          "name": "2.9 Update Client - Non-Existent ❌",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\":\"Non Existent\",\"email\":\"test@test.com\"}"
+            },
+            "url": "{{baseUrl}}/clients/999999"
+          }
+        },
+        {
+          "name": "2.10 Get Client Order History ✅",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Returns array', () => pm.expect(pm.response.json()).to.be.an('array'));",
+                  "pm.test('Each order has required fields', () => {",
+                  "  const orders = pm.response.json();",
+                  "  if (orders.length > 0) {",
+                  "    orders.forEach(o => {",
+                  "      pm.expect(o.id).to.exist;",
+                  "      pm.expect(o.status).to.exist;",
+                  "      pm.expect(o.totalTTC).to.exist;",
+                  "    });",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/clients/2/orders"
+          }
+        },
+        {
+          "name": "2.11 CLIENT Try to View Another Client ❌",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.sendRequest({",
+                  "  url: pm.variables.get('baseUrl') + '/auth/login',",
+                  "  method: 'POST',",
+                  "  header: {'Content-Type': 'application/json'},",
+                  "  body: {mode: 'raw', raw: JSON.stringify({username: 'amine_tech', password: 'pass123'})}",
+                  "}, () => {});"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 403', () => pm.response.to.have.status(403));",
+                  "pm.test('Authorization error', () => {",
+                  "  const msg = pm.response.json().message || '';",
+                  "  pm.expect(msg.toLowerCase()).to.include('client');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/clients/1"
+          }
+        },
+        {
+          "name": "2.12 CLIENT Try to Create Client ❌",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 403', () => pm.response.to.have.status(403));",
+                  "pm.test('Only ADMIN can create', () => {",
+                  "  const msg = pm.response.json().message || pm.response.json().error || '';",
+                  "  pm.expect(msg).to.include('ADMIN');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\":\"Test\",\"email\":\"test@example.com\",\"username\":\"test\",\"password\":\"pass\"}"
+            },
+            "url": "{{baseUrl}}/clients"
+          }
+        },
+        {
+          "name": "2.13 CLIENT Try to View All Clients ❌",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/clients"
+          }
+        },
+        {
+          "name": "2.14 Delete Client ✅",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.sendRequest({",
+                  "  url: pm.variables.get('baseUrl') + '/auth/login',",
+                  "  method: 'POST',",
+                  "  header: {'Content-Type': 'application/json'},",
+                  "  body: {mode: 'raw', raw: JSON.stringify({username: 'admin', password: 'admin123'})}",
+                  "}, () => {});"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Success message', () => pm.expect(pm.response.text()).to.include('success'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/clients/{{newClientId}}"
+          }
+        },
+        {
+          "name": "2.15 Delete Non-Existent Client ❌",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/clients/999999"
+          }
+        }
+      ]
+    },
+    {
+      "name": "PHASE 3 - Product Management",
+      "item": [
+        {
+          "name": "LOGIN ADMIN (Prerequisite)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"username\":\"admin\",\"password\":\"admin123\"}"
+            },
+            "url": "{{baseUrl}}/auth/login"
+          }
+        },
+        {
+          "name": "3.1 Create Product ✅",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Has product ID', () => pm.expect(pm.response.json().id).to.exist);",
+                  "pm.test('Has stock field', () => pm.expect(pm.response.json().stock).to.exist);",
+                  "pm.test('Has price field', () => pm.expect(pm.response.json().unitPrice).to.exist);",
+                  "pm.test('Product is active', () => pm.expect(pm.response.json().active).to.eql(true));",
+                  "pm.collectionVariables.set('newProductId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\":\"Test Product Auto\",\"description\":\"Automated test product\",\"unitPrice\":500.00,\"stock\":50}"
+            },
+            "url": "{{baseUrl}}/products"
+          }
+        },
+        {
+          "name": "3.2 Create Product - Negative Price ❌",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 400 or 422', () => pm.response.to.have.status.oneOf([400, 422]));",
+                  "pm.test('Error mentions price', () => {",
+                  "  const msg = JSON.stringify(pm.response.json()).toLowerCase();",
+                  "  pm.expect(msg).to.include('price');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\":\"Negative Price Product\",\"description\":\"Invalid\",\"unitPrice\":-100.00,\"stock\":10}"
+            },
+            "url": "{{baseUrl}}/products"
+          }
+        },
+        {
+          "name": "3.3 Create Product - Negative Stock ❌",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 400 or 422', () => pm.response.to.have.status.oneOf([400, 422]));",
+                  "pm.test('Error mentions stock', () => {",
+                  "  const msg = JSON.stringify(pm.response.json()).toLowerCase();",
+                  "  pm.expect(msg).to.include('stock');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\":\"Negative Stock Product\",\"description\":\"Invalid\",\"unitPrice\":100.00,\"stock\":-5}"
+            },
+            "url": "{{baseUrl}}/products"
+          }
+        },
+        {
+          "name": "3.4 Get All Products (Paginated) ✅",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has pagination structure', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.content).to.be.an('array');",
+                  "  pm.expect(body.totalElements).to.exist;",
+                  "  pm.expect(body.totalPages).to.exist;",
+                  "  pm.expect(body.size).to.exist;",
+                  "});",
+                  "pm.test('Products have required fields', () => {",
+                  "  const products = pm.response.json().content;",
+                  "  if (products.length > 0) {",
+                  "    products.forEach(p => {",
+                  "      pm.expect(p.id).to.exist;",
+                  "      pm.expect(p.name).to.exist;",
+                  "      pm.expect(p.unitPrice).to.exist;",
+                  "    });",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/products?page=0&size=10"
+          }
+        },
+        {
+          "name": "3.5 Get Products Page 2 ✅",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Page number is 1', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.number).to.eql(1);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/products?page=1&size=5"
+          }
+        },
+        {
+          "name": "3.6 Search Products by Name ✅",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Returns filtered results', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.content).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/products?search=Laptop&page=0&size=10"
+          }
+        },
+        {
+          "name": "3.7 Search Products - No Results ✅",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Empty or small result set', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.content).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/products?search=NONEXISTENTPRODUCTXYZ9999&page=0&size=10"
+          }
+        },
+        {
+          "name": "3.8 Get Product by ID ✅",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Product details complete', () => {",
+                  "  const p = pm.response.json();",
+                  "  pm.expect(p.id).to.exist;",
+                  "  pm.expect(p.name).to.exist;",
+                  "  pm.expect(p.unitPrice).to.exist;",
+                  "  pm.expect(p.stock).to.exist;",
+                  "  pm.expect(p.description).to.exist;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/products/1"
+          }
+        },
+        {
+          "name": "3.9 Get Product by ID - Non-Existent ❌",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 404', () => pm.response.to.have.status(404));",
+                  "pm.test('Error message exists', () => pm.expect(pm.response.json().message).to.exist);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/products/999999"
+          }
+        },
+        {
+          "name": "3.10 Update Product ✅",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Updated data returned', () => {",
+                  "  const p = pm.response.json();",
+                  "  pm.expect(p.id).to.exist;",
+                  "  pm.expect(p.name).to.exist;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\":\"Updated Product Name\",\"description\":\"Updated description\",\"unitPrice\":599.99,\"stock\":75}"
+            },
+            "url": "{{baseUrl}}/products/{{newProductId}}"
+          }
+        },
+        {
+          "name": "3.11 Update Product - Non-Existent ❌",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\":\"Non-Existent\",\"unitPrice\":100}"
+            },
+            "url": "{{baseUrl}}/products/999999"
+          }
+        },
+        {
+          "name": "3.12 CLIENT Try to Create Product ❌",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.sendRequest({",
+                  "  url: pm.variables.get('baseUrl') + '/auth/login',",
+                  "  method: 'POST',",
+                  "  header: {'Content-Type': 'application/json'},",
+                  "  body: {mode: 'raw', raw: JSON.stringify({username: 'amine_tech', password: 'pass123'})}",
+                  "}, () => {});"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 403', () => pm.response.to.have.status(403));",
+                  "pm.test('Only ADMIN can create products', () => {",
+                  "  const msg = pm.response.json().message || '';",
+                  "  pm.expect(msg).to.include('ADMIN');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\":\"Client Product\",\"unitPrice\":100,\"stock\":10}"
+            },
+            "url": "{{baseUrl}}/products"
+          }
+        },
+        {
+          "name": "3.13 CLIENT Try to Update Product ❌",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\":\"Hacked Product\",\"unitPrice\":1}"
+            },
+            "url": "{{baseUrl}}/products/1"
+          }
+        },
+        {
+          "name": "3.14 CLIENT Try to Delete Product ❌",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/products/1"
+          }
+        },
+        {
+          "name": "3.15 CLIENT Can View Products ✅",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('CLIENT has read access', () => {",
+                  "  pm.expect(pm.response.json().content).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/products?page=0&size=5"
+          }
+        },
+        {
+          "name": "3.16 Delete Product (Soft Delete) ✅",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.sendRequest({",
+                  "  url: pm.variables.get('baseUrl') + '/auth/login',",
+                  "  method: 'POST',",
+                  "  header: {'Content-Type': 'application/json'},",
+                  "  body: {mode: 'raw', raw: JSON.stringify({username: 'admin', password: 'admin123'})}",
+                  "}, () => {});"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Success message', () => pm.expect(pm.response.text()).to.include('success'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/products/{{newProductId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "PHASE 4 - Orders & Loyalty Calculations (CRITICAL)",
+      "item": [
+        {
+          "name": "LOGIN ADMIN (Prerequisite)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"username\":\"admin\",\"password\":\"admin123\"}"
+            },
+            "url": "{{baseUrl}}/auth/login"
+          }
+        },
+        {
+          "name": "4.1 Create Order - BASIC Client (0% Discount) ✅",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "const r = pm.response.json();",
+                  "pm.test('Order ID exists', () => pm.expect(r.id).to.exist);",
+                  "pm.test('Status is PENDING', () => pm.expect(r.status).to.eql('PENDING'));",
+                  "pm.test('SubtotalHT = 300', () => pm.expect(r.subtotalHT).to.eql(300.00));",
+                  "pm.test('Loyalty discount = 0 (BASIC)', () => pm.expect(r.loyaltyDiscount).to.eql(0.00));",
+                  "pm.test('AmountHT = 300', () => pm.expect(r.amountHT).to.eql(300.00));",
+                  "pm.test('TVA = 60 (20%)', () => pm.expect(r.tvaAmount).to.eql(60.00));",
+                  "pm.test('TotalTTC = 360', () => pm.expect(r.totalTTC).to.eql(360.00));",
+                  "pm.test('Has items array', () => pm.expect(r.items).to.be.an('array'));",
+                  "pm.collectionVariables.set('testOrderForPayment', r.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"clientId\":1,\"items\":[{\"productId\":3,\"quantity\":2}]}"
+            },
+            "url": "{{baseUrl}}/orders"
+          }
+        },
+        {
+          "name": "4.2 Create Order - SILVER Client (5% Discount) ✅",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "const r = pm.response.json();",
+                  "pm.test('SubtotalHT = 800', () => pm.expect(r.subtotalHT).to.eql(800.00));",
+                  "pm.test('Loyalty discount = 40 (5%)', () => pm.expect(r.loyaltyDiscount).to.eql(40.00));",
+                  "pm.test('AmountHT = 760', () => pm.expect(r.amountHT).to.eql(760.00));",
+                  "pm.test('TVA = 152 (20%)', () => pm.expect(r.tvaAmount).to.eql(152.00));",
+                  "pm.test('TotalTTC = 912', () => pm.expect(r.totalTTC).to.eql(912.00));",
+                  "pm.test('Tier is SILVER', () => pm.expect(r.clientTier).to.eql('SILVER'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"clientId\":2,\"items\":[{\"productId\":6,\"quantity\":1}]}"
+            },
+            "url": "{{baseUrl}}/orders"
+          }
+        },
+        {
+          "name": "4.3 Create Order - GOLD Client (10% Discount) ✅",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "const r = pm.response.json();",
+                  "pm.test('SubtotalHT = 1200', () => pm.expect(r.subtotalHT).to.eql(1200.00));",
+                  "pm.test('Loyalty discount = 120 (10%)', () => pm.expect(r.loyaltyDiscount).to.eql(120.00));",
+                  "pm.test('AmountHT = 1080', () => pm.expect(r.amountHT).to.eql(1080.00));",
+                  "pm.test('TVA = 216 (20%)', () => pm.expect(r.tvaAmount).to.eql(216.00));",
+                  "pm.test('TotalTTC = 1296', () => pm.expect(r.totalTTC).to.eql(1296.00));",
+                  "pm.test('Tier is GOLD', () => pm.expect(r.clientTier).to.eql('GOLD'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"clientId\":3,\"items\":[{\"productId\":2,\"quantity\":1}]}"
+            },
+            "url": "{{baseUrl}}/orders"
+          }
+        },
+        {
+          "name": "4.4 Create Order - PLATINUM Client (15% Discount) ✅",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "const r = pm.response.json();",
+                  "pm.test('SubtotalHT = 5500', () => pm.expect(r.subtotalHT).to.eql(5500.00));",
+                  "pm.test('Loyalty discount = 825 (15%)', () => pm.expect(r.loyaltyDiscount).to.eql(825.00));",
+                  "pm.test('AmountHT = 4675', () => pm.expect(r.amountHT).to.eql(4675.00));",
+                  "pm.test('TVA = 935 (20%)', () => pm.expect(r.tvaAmount).to.eql(935.00));",
+                  "pm.test('TotalTTC = 5610', () => pm.expect(r.totalTTC).to.eql(5610.00));",
+                  "pm.test('Tier is PLATINUM', () => pm.expect(r.clientTier).to.eql('PLATINUM'));",
+                  "pm.collectionVariables.set('newOrderId', r.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"clientId\":4,\"items\":[{\"productId\":1,\"quantity\":1}]}"
+            },
+            "url": "{{baseUrl}}/orders"
+          }
+        },
+        {
+          "name": "4.5 Create Order with Promo Code ✅",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "const r = pm.response.json();",
+                  "pm.test('Has promo discount', () => pm.expect(r.promoDiscount).to.be.above(0));",
+                  "pm.test('Total discount = loyalty + promo', () => {",
+                  "  pm.expect(r.totalDiscount).to.eql(r.loyaltyDiscount + r.promoDiscount);",
+                  "});",
+                  "pm.test('Promo code applied', () => pm.expect(r.promoCode).to.exist);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"clientId\":3,\"promoCode\":\"PROMO-TEST\",\"items\":[{\"productId\":2,\"quantity\":1}]}"
+            },
+            "url": "{{baseUrl}}/orders"
+          }
+        },
+        {
+          "name": "4.6 Create Order - Invalid Promo Code ❌",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 404 or 422', () => pm.response.to.have.status.oneOf([404, 422]));",
+                  "pm.test('Error mentions promo code', () => {",
+                  "  const msg = pm.response.json().message || '';",
+                  "  pm.expect(msg.toLowerCase()).to.include('promo');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"clientId\":3,\"promoCode\":\"INVALID_CODE_XYZ\",\"items\":[{\"productId\":2,\"quantity\":1}]}"
+            },
+            "url": "{{baseUrl}}/orders"
+          }
+        },
+        {
+          "name": "4.7 Create Order - Used Promo Code ❌",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 422', () => pm.response.to.have.status(422));",
+                  "pm.test('Error mentions already used', () => {",
+                  "  const msg = pm.response.json().message || '';",
+                  "  pm.expect(msg.toLowerCase()).to.satisfy(m => m.includes('used') || m.includes('already'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"clientId\":3,\"promoCode\":\"PROMO-USED\",\"items\":[{\"productId\":2,\"quantity\":1}]}"
+            },
+            "url": "{{baseUrl}}/orders"
+          }
+        },
+        {
+          "name": "4.8 Create Order - Insufficient Stock ❌",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 422', () => pm.response.to.have.status(422));",
+                  "pm.test('Error mentions stock', () => {",
+                  "  const msg = pm.response.json().message || '';",
+                  "  pm.expect(msg.toLowerCase()).to.include('stock');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"clientId\":1,\"items\":[{\"productId\":1,\"quantity\":999}]}"
+            },
+            "url": "{{baseUrl}}/orders"
+          }
+        },
+        {
+          "name": "4.9 Create Order - Non-Existent Product ❌",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 404', () => pm.response.to.have.status(404));",
+                  "pm.test('Error mentions product', () => {",
+                  "  const msg = pm.response.json().message || '';",
+                  "  pm.expect(msg.toLowerCase()).to.include('product');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"clientId\":1,\"items\":[{\"productId\":999999,\"quantity\":1}]}"
+            },
+            "url": "{{baseUrl}}/orders"
+          }
+        },
+        {
+          "name": "4.10 Create Order - Non-Existent Client ❌",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 404', () => pm.response.to.have.status(404));",
+                  "pm.test('Error mentions client', () => {",
+                  "  const msg = pm.response.json().message || '';",
+                  "  pm.expect(msg.toLowerCase()).to.include('client');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"clientId\":999999,\"items\":[{\"productId\":1,\"quantity\":1}]}"
+            },
+            "url": "{{baseUrl}}/orders"
+          }
+        },
+        {
+          "name": "4.11 Create Order - Empty Items ❌",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 400 or 422', () => pm.response.to.have.status.oneOf([400, 422]));",
+                  "pm.test('Error mentions items', () => {",
+                  "  const body = pm.response.json();",
+                  "  const msg = JSON.stringify(body.errors || body.message || body).toLowerCase();",
+                  "  pm.expect(msg).to.include('item');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"clientId\":1,\"items\":[]}"
+            },
+            "url": "{{baseUrl}}/orders"
+          }
+        },
+        {
+          "name": "4.12 Create Order - Zero Quantity ❌",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 400 or 422', () => pm.response.to.have.status.oneOf([400, 422]));",
+                  "pm.test('Error mentions quantity', () => {",
+                  "  const msg = JSON.stringify(pm.response.json()).toLowerCase();",
+                  "  pm.expect(msg).to.include('quantity');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"clientId\":1,\"items\":[{\"productId\":1,\"quantity\":0}]}"
+            },
+            "url": "{{baseUrl}}/orders"
+          }
+        },
+        {
+          "name": "4.13 Create Multi-Product Order ✅",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "const r = pm.response.json();",
+                  "pm.test('Has multiple items', () => pm.expect(r.items.length).to.be.at.least(2));",
+                  "pm.test('Subtotal is sum of items', () => {",
+                  "  let itemTotal = 0;",
+                  "  r.items.forEach(item => itemTotal += item.subtotal);",
+                  "  pm.expect(r.subtotalHT).to.eql(itemTotal);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"clientId\":2,\"items\":[{\"productId\":3,\"quantity\":1},{\"productId\":5,\"quantity\":2},{\"productId\":7,\"quantity\":1}]}"
+            },
+            "url": "{{baseUrl}}/orders"
+          }
+        },
+        {
+          "name": "4.14 Get All Orders ✅",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Returns array', () => pm.expect(pm.response.json()).to.be.an('array'));",
+                  "pm.test('Orders have required fields', () => {",
+                  "  const orders = pm.response.json();",
+                  "  if (orders.length > 0) {",
+                  "    orders.forEach(o => {",
+                  "      pm.expect(o.id).to.exist;",
+                  "      pm.expect(o.status).to.exist;",
+                  "      pm.expect(o.totalTTC).to.exist;",
+                  "      pm.expect(o.clientId).to.exist;",
+                  "    });",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/orders"
+          }
+        },
+        {
+          "name": "4.15 Get Order by ID ✅",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json();",
+                  "pm.test('Order complete details', () => {",
+                  "  pm.expect(r.id).to.exist;",
+                  "  pm.expect(r.status).to.exist;",
+                  "  pm.expect(r.subtotalHT).to.exist;",
+                  "  pm.expect(r.tvaAmount).to.exist;",
+                  "  pm.expect(r.totalTTC).to.exist;",
+                  "  pm.expect(r.items).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/orders/{{newOrderId}}"
+          }
+        },
+        {
+          "name": "4.16 Get Order by ID - Non-Existent ❌",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/orders/999999"
+          }
+        },
+        {
+          "name": "4.17 CLIENT View Own Order ✅",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.sendRequest({",
+                  "  url: pm.variables.get('baseUrl') + '/auth/login',",
+                  "  method: 'POST',",
+                  "  header: {'Content-Type': 'application/json'},",
+                  "  body: {mode: 'raw', raw: JSON.stringify({username: 'amine_tech', password: 'pass123'})}",
+                  "}, () => {});"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('CLIENT can view own order', () => pm.expect(pm.response.json().id).to.exist);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/orders/1"
+          }
+        },
+        {
+          "name": "4.18 CLIENT Try View Other's Order ❌",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 403', () => pm.response.to.have.status(403));",
+                  "pm.test('Authorization error', () => {",
+                  "  const msg = pm.response.json().message || '';",
+                  "  pm.expect(msg.toLowerCase()).to.satisfy(m => m.includes('client') || m.includes('own'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/orders/3"
+          }
+        },
+        {
+          "name": "4.19 CLIENT Try to Create Order ❌",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 403', () => pm.response.to.have.status(403));",
+                  "pm.test('Only ADMIN can create orders', () => {",
+                  "  const msg = pm.response.json().message || '';",
+                  "  pm.expect(msg).to.include('ADMIN');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"clientId\":2,\"items\":[{\"productId\":1,\"quantity\":1}]}"
+            },
+            "url": "{{baseUrl}}/orders"
+          }
+        },
+        {
+          "name": "4.20 CLIENT Try to View All Orders ❌",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/orders"
+          }
+        }
+      ]
+    },
+    {
+      "name": "PHASE 5 - Payment System (CRITICAL)",
+      "item": [
+        {
+          "name": "LOGIN ADMIN (Prerequisite)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"username\":\"admin\",\"password\":\"admin123\"}"
+            },
+            "url": "{{baseUrl}}/auth/login"
+          }
+        },
+        {
+          "name": "5.1 Add CASH Payment ✅",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "const r = pm.response.json();",
+                  "pm.test('Payment ID exists', () => pm.expect(r.id).to.exist);",
+                  "pm.test('PaymentNumber is assigned', () => pm.expect(r.paymentNumber).to.be.at.least(1));",
+                  "pm.test('Status is PENDING', () => pm.expect(r.status).to.eql('PENDING'));",
+                  "pm.test('Method is CASH', () => pm.expect(r.paymentMethod).to.eql('CASH'));",
+                  "pm.test('Amount matches', () => pm.expect(r.amount).to.exist);",
+                  "pm.test('Reference exists', () => pm.expect(r.reference).to.exist);",
+                  "pm.collectionVariables.set('newPaymentId', r.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"amount\":1000.00,\"paymentMethod\":\"CASH\",\"reference\":\"CASH-AUTO-TEST-001\"}"
+            },
+            "url": "{{baseUrl}}/orders/{{newOrderId}}/payments"
+          }
+        },
+        {
+          "name": "5.2 Add BANK_TRANSFER Payment ✅",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "const r = pm.response.json();",
+                  "pm.test('Method is BANK_TRANSFER', () => pm.expect(r.paymentMethod).to.eql('BANK_TRANSFER'));",
+                  "pm.test('Status is PENDING', () => pm.expect(r.status).to.eql('PENDING'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"amount\":2000.00,\"paymentMethod\":\"BANK_TRANSFER\",\"reference\":\"TRANSFER-REF-123\"}"
+            },
+            "url": "{{baseUrl}}/orders/{{newOrderId}}/payments"
+          }
+        },
+        {
+          "name": "5.3 Add CHECK Payment ✅",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "const r = pm.response.json();",
+                  "pm.test('Method is CHECK', () => pm.expect(r.paymentMethod).to.eql('CHECK'));",
+                  "pm.test('Has reference', () => pm.expect(r.reference).to.exist);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"amount\":1500.00,\"paymentMethod\":\"CHECK\",\"reference\":\"CHECK-789456\"}"
+            },
+            "url": "{{baseUrl}}/orders/{{newOrderId}}/payments"
+          }
+        },
+        {
+          "name": "5.4 Add CREDIT_CARD Payment ✅",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "const r = pm.response.json();",
+                  "pm.test('Method is CREDIT_CARD', () => pm.expect(r.paymentMethod).to.eql('CREDIT_CARD'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"amount\":1110.00,\"paymentMethod\":\"CREDIT_CARD\",\"reference\":\"CARD-TXN-456789\"}"
+            },
+            "url": "{{baseUrl}}/orders/{{newOrderId}}/payments"
+          }
+        },
+        {
+          "name": "5.5 CASH Payment > 20,000 DH ❌",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 422', () => pm.response.to.have.status(422));",
+                  "pm.test('Error mentions 20,000 DH limit', () => {",
+                  "  const msg = pm.response.json().message || '';",
+                  "  pm.expect(msg).to.satisfy(m => m.includes('20') || m.includes('20,000') || m.includes('20000'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"amount\":25000.00,\"paymentMethod\":\"CASH\",\"reference\":\"INVALID-CASH\"}"
+            },
+            "url": "{{baseUrl}}/orders/3/payments"
+          }
+        },
+        {
+          "name": "5.6 Add Payment - Negative Amount ❌",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 400 or 422', () => pm.response.to.have.status.oneOf([400, 422]));",
+                  "pm.test('Error mentions amount', () => {",
+                  "  const msg = JSON.stringify(pm.response.json()).toLowerCase();",
+                  "  pm.expect(msg).to.include('amount');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"amount\":-500.00,\"paymentMethod\":\"CASH\",\"reference\":\"NEG\"}"
+            },
+            "url": "{{baseUrl}}/orders/1/payments"
+          }
+        },
+        {
+          "name": "5.7 Add Payment - Zero Amount ❌",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 400 or 422', () => pm.response.to.have.status.oneOf([400, 422]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"amount\":0.00,\"paymentMethod\":\"CASH\",\"reference\":\"ZERO\"}"
+            },
+            "url": "{{baseUrl}}/orders/1/payments"
+          }
+        },
+        {
+          "name": "5.8 Add Payment - Non-Existent Order ❌",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 404', () => pm.response.to.have.status(404));",
+                  "pm.test('Error mentions order', () => {",
+                  "  const msg = pm.response.json().message || '';",
+                  "  pm.expect(msg.toLowerCase()).to.include('order');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"amount\":1000.00,\"paymentMethod\":\"CASH\",\"reference\":\"REF\"}"
+            },
+            "url": "{{baseUrl}}/orders/999999/payments"
+          }
+        },
+        {
+          "name": "5.9 Get Order Payments ✅",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Returns array', () => pm.expect(pm.response.json()).to.be.an('array'));",
+                  "pm.test('Payments have sequential numbers', () => {",
+                  "  const payments = pm.response.json();",
+                  "  if (payments.length > 1) {",
+                  "    payments.forEach((p, idx) => {",
+                  "      pm.expect(p.paymentNumber).to.eql(idx + 1);",
+                  "    });",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/orders/{{newOrderId}}/payments"
+          }
+        },
+        {
+          "name": "5.10 Get Payment by ID ✅",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json();",
+                  "pm.test('Payment details complete', () => {",
+                  "  pm.expect(r.id).to.exist;",
+                  "  pm.expect(r.amount).to.exist;",
+                  "  pm.expect(r.paymentMethod).to.exist;",
+                  "  pm.expect(r.status).to.exist;",
+                  "  pm.expect(r.reference).to.exist;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/payments/{{newPaymentId}}"
+          }
+        },
+        {
+          "name": "5.11 Get Payment - Non-Existent ❌",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/payments/999999"
+          }
+        },
+        {
+          "name": "5.12 Update Payment Status to COLLECTED ✅",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Status changed to COLLECTED', () => {",
+                  "  pm.expect(pm.response.json().status).to.eql('COLLECTED');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/payments/{{newPaymentId}}/status?status=COLLECTED"
+          }
+        },
+        {
+          "name": "5.13 Update Payment Status to REJECTED ✅",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Status changed to REJECTED', () => {",
+                  "  pm.expect(pm.response.json().status).to.eql('REJECTED');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/payments/{{newPaymentId}}/status?status=REJECTED"
+          }
+        },
+        {
+          "name": "5.14 Update Payment Status to PENDING ✅",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Status changed to PENDING', () => {",
+                  "  pm.expect(pm.response.json().status).to.eql('PENDING');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/payments/{{newPaymentId}}/status?status=PENDING"
+          }
+        },
+        {
+          "name": "5.15 Update Payment - Non-Existent ❌",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/payments/999999/status?status=COLLECTED"
+          }
+        },
+        {
+          "name": "5.16 Get All Pending Payments ✅",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Returns array', () => pm.expect(pm.response.json()).to.be.an('array'));",
+                  "pm.test('All payments are PENDING', () => {",
+                  "  const payments = pm.response.json();",
+                  "  payments.forEach(p => {",
+                  "    pm.expect(p.status).to.eql('PENDING');",
+                  "  });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/payments/pending"
+          }
+        },
+        {
+          "name": "5.17 CLIENT Try Add Payment ❌",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.sendRequest({",
+                  "  url: pm.variables.get('baseUrl') + '/auth/login',",
+                  "  method: 'POST',",
+                  "  header: {'Content-Type': 'application/json'},",
+                  "  body: {mode: 'raw', raw: JSON.stringify({username: 'amine_tech', password: 'pass123'})}",
+                  "}, () => {});"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 403', () => pm.response.to.have.status(403));",
+                  "pm.test('Only ADMIN can add payments', () => {",
+                  "  const msg = pm.response.json().message || '';",
+                  "  pm.expect(msg).to.include('ADMIN');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"amount\":100.00,\"paymentMethod\":\"CASH\",\"reference\":\"HACK\"}"
+            },
+            "url": "{{baseUrl}}/orders/1/payments"
+          }
+        },
+        {
+          "name": "5.18 CLIENT Try Update Payment Status ❌",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/payments/1/status?status=COLLECTED"
+          }
+        },
+        {
+          "name": "5.19 CLIENT Try View Pending Payments ❌",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/payments/pending"
+          }
+        },
+        {
+          "name": "5.20 CLIENT Try View Payment Details ❌",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/payments/1"
+          }
+        }
+      ]
+    },
+    {
+      "name": "PHASE 6 - PromoCode Management",
+      "item": [
+        {
+          "name": "LOGIN ADMIN (Prerequisite)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"username\":\"admin\",\"password\":\"admin123\"}"
+            },
+            "url": "{{baseUrl}}/auth/login"
+          }
+        },
+        {
+          "name": "6.1 Create PromoCode ✅",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const rand = Math.random().toString(36).substr(2, 8).toUpperCase();",
+                  "pm.collectionVariables.set('newPromoCode', `PROMO-${rand}`);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json();",
+                  "pm.test('Has promo ID', () => pm.expect(r.id).to.exist);",
+                  "pm.test('Has code', () => pm.expect(r.code).to.exist);",
+                  "pm.test('Used is false', () => pm.expect(r.used).to.eql(false));",
+                  "pm.test('Discount is 5', () => pm.expect(r.discount).to.eql(5));",
+                  "pm.collectionVariables.set('newPromoId', r.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"code\":\"{{newPromoCode}}\"}"
+            },
+            "url": "{{baseUrl}}/promo-codes"
+          }
+        },
+        {
+          "name": "6.2 Create PromoCode - Empty Code ❌",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 422', () => pm.response.to.have.status(422));",
+                  "pm.test('Error mentions code required', () => {",
+                  "  const msg = pm.response.json().message || '';",
+                  "  pm.expect(msg.toLowerCase()).to.include('code');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"code\":\"\"}"
+            },
+            "url": "{{baseUrl}}/promo-codes"
+          }
+        },
+        {
+          "name": "6.3 Create PromoCode - No Code Field ❌",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 422', () => pm.response.to.have.status(422));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": "{{baseUrl}}/promo-codes"
+          }
+        },
+        {
+          "name": "6.4 Get All PromoCodes ✅",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Returns array', () => pm.expect(pm.response.json()).to.be.an('array'));",
+                  "pm.test('PromoCodes have required fields', () => {",
+                  "  const codes = pm.response.json();",
+                  "  if (codes.length > 0) {",
+                  "    codes.forEach(c => {",
+                  "      pm.expect(c.id).to.exist;",
+                  "      pm.expect(c.code).to.exist;",
+                  "      pm.expect(c.used).to.exist;",
+                  "    });",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/promo-codes"
+          }
+        },
+        {
+          "name": "6.5 CLIENT Try to Create PromoCode ❌",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.sendRequest({",
+                  "  url: pm.variables.get('baseUrl') + '/auth/login',",
+                  "  method: 'POST',",
+                  "  header: {'Content-Type': 'application/json'},",
+                  "  body: {mode: 'raw', raw: JSON.stringify({username: 'amine_tech', password: 'pass123'})}",
+                  "}, () => {});"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 403', () => pm.response.to.have.status(403));",
+                  "pm.test('Only ADMIN can create promo codes', () => {",
+                  "  const body = pm.response.json();",
+                  "  const msg = body.message || body.error || '';",
+                  "  pm.expect(msg).to.include('ADMIN');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"code\":\"CLIENT-HACK-PROMO\"}"
+            },
+            "url": "{{baseUrl}}/promo-codes"
+          }
+        },
+        {
+          "name": "6.6 CLIENT Try to View PromoCodes ❌",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/promo-codes"
+          }
+        }
+      ]
+    },
+    {
+      "name": "PHASE 7 - Order Lifecycle & Confirmation",
+      "item": [
+        {
+          "name": "LOGIN ADMIN (Prerequisite)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"username\":\"admin\",\"password\":\"admin123\"}"
+            },
+            "url": "{{baseUrl}}/auth/login"
+          }
+        },
+        {
+          "name": "7.1 Confirm Order - Not Fully Paid ❌",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 422', () => pm.response.to.have.status(422));",
+                  "pm.test('Error mentions payment', () => {",
+                  "  const msg = pm.response.json().message || '';",
+                  "  pm.expect(msg.toLowerCase()).to.satisfy(m => m.includes('paid') || m.includes('payment'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/orders/{{testOrderForPayment}}/confirm"
+          }
+        },
+        {
+          "name": "7.2 Add Full Payment to Test Order",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Payment added', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"amount\":360.00,\"paymentMethod\":\"CASH\",\"reference\":\"FULL-PAYMENT-TEST\"}"
+            },
+            "url": "{{baseUrl}}/orders/{{testOrderForPayment}}/payments"
+          }
+        },
+        {
+          "name": "7.3 Collect Payment",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.sendRequest({",
+                  "  url: `${pm.variables.get('baseUrl')}/orders/${pm.collectionVariables.get('testOrderForPayment')}/payments`,",
+                  "  method: 'GET'",
+                  "}, (err, res) => {",
+                  "  if (!err && res.json().length > 0) {",
+                  "    const lastPayment = res.json()[res.json().length - 1];",
+                  "    pm.collectionVariables.set('lastPaymentId', lastPayment.id);",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/payments/{{lastPaymentId}}/status?status=COLLECTED"
+          }
+        },
+        {
+          "name": "7.4 Confirm Fully Paid Order ✅",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Order status is CONFIRMED', () => {",
+                  "  pm.expect(pm.response.json().status).to.eql('CONFIRMED');",
+                  "});",
+                  "pm.test('Order still has all details', () => {",
+                  "  const r = pm.response.json();",
+                  "  pm.expect(r.totalTTC).to.exist;",
+                  "  pm.expect(r.items).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/orders/{{testOrderForPayment}}/confirm"
+          }
+        },
+        {
+          "name": "7.5 Confirm Already Confirmed Order ❌",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 422', () => pm.response.to.have.status(422));",
+                  "pm.test('Error mentions already confirmed', () => {",
+                  "  const msg = pm.response.json().message || '';",
+                  "  pm.expect(msg.toLowerCase()).to.satisfy(m => m.includes('confirm') || m.includes('status'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/orders/{{testOrderForPayment}}/confirm"
+          }
+        },
+        {
+          "name": "7.6 Confirm Non-Existent Order ❌",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/orders/999999/confirm"
+          }
+        },
+        {
+          "name": "7.7 Cancel PENDING Order ✅",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.sendRequest({",
+                  "  url: pm.variables.get('baseUrl') + '/orders',",
+                  "  method: 'POST',",
+                  "  header: {'Content-Type': 'application/json'},",
+                  "  body: {",
+                  "    mode: 'raw',",
+                  "    raw: JSON.stringify({clientId: 1, items: [{productId: 3, quantity: 1}]})",
+                  "  }",
+                  "}, (err, res) => {",
+                  "  if (!err) {",
+                  "    pm.collectionVariables.set('orderToCancel', res.json().id);",
+                  "  }",
+                  "});"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Order status is CANCELED', () => {",
+                  "  pm.expect(pm.response.json().status).to.eql('CANCELED');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/orders/{{orderToCancel}}/cancel"
+          }
+        },
+        {
+          "name": "7.8 Cancel Already Canceled Order ❌",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 422', () => pm.response.to.have.status(422));",
+                  "pm.test('Error mentions status', () => {",
+                  "  const msg = pm.response.json().message || '';",
+                  "  pm.expect(msg.toLowerCase()).to.satisfy(m => m.includes('cancel') || m.includes('status'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/orders/{{orderToCancel}}/cancel"
+          }
+        },
+        {
+          "name": "7.9 Cancel Non-Existent Order ❌",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/orders/999999/cancel"
+          }
+        },
+        {
+          "name": "7.10 CLIENT Try to Confirm Order ❌",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.sendRequest({",
+                  "  url: pm.variables.get('baseUrl') + '/auth/login',",
+                  "  method: 'POST',",
+                  "  header: {'Content-Type': 'application/json'},",
+                  "  body: {mode: 'raw', raw: JSON.stringify({username: 'amine_tech', password: 'pass123'})}",
+                  "}, () => {});"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 403', () => pm.response.to.have.status(403));",
+                  "pm.test('Only ADMIN can confirm', () => {",
+                  "  const msg = pm.response.json().message || '';",
+                  "  pm.expect(msg).to.include('ADMIN');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/orders/1/confirm"
+          }
+        },
+        {
+          "name": "7.11 CLIENT Try to Cancel Order ❌",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 403', () => pm.response.to.have.status(403));",
+                  "pm.test('Only ADMIN can cancel', () => {",
+                  "  const msg = pm.response.json().message || '';",
+                  "  pm.expect(msg).to.include('ADMIN');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/orders/1/cancel"
+          }
+        },
+        {
+          "name": "7.12 Verify Order History After Confirmation ✅",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.sendRequest({",
+                  "  url: pm.variables.get('baseUrl') + '/auth/login',",
+                  "  method: 'POST',",
+                  "  header: {'Content-Type': 'application/json'},",
+                  "  body: {mode: 'raw', raw: JSON.stringify({username: 'admin', password: 'admin123'})}",
+                  "}, () => {});"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has orders', () => {",
+                  "  const orders = pm.response.json();",
+                  "  pm.expect(orders).to.be.an('array');",
+                  "  pm.expect(orders.length).to.be.above(0);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/clients/1/orders"
+          }
+        }
+      ]
+    }
+  ]
+}

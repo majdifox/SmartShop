@@ -29,7 +29,6 @@ public class AuthServiceImpl implements AuthService {
         // Store in session
         httpSession.setAttribute("userId", user.getId());
 
-        // FIX: Only get clientId if user is CLIENT
         Long clientId = null;
         if (user.getRole() == UserRole.CLIENT && user.getClient() != null) {
             clientId = user.getClient().getId();
@@ -39,7 +38,7 @@ public class AuthServiceImpl implements AuthService {
                 .userId(user.getId())
                 .username(user.getUsername())
                 .role(user.getRole())
-                .clientId(clientId)  // ← Will be null for ADMIN, that's OK
+                .clientId(clientId)
                 .message("Login successful")
                 .build();
     }

@@ -66,7 +66,6 @@ public class LoyaltyServiceImpl implements LoyaltyService {
                 break;
         }
 
-        // PDF: "Arrondis: tous les montants à 2 décimales"
         return discount.setScale(2, RoundingMode.HALF_UP);
     }
 }

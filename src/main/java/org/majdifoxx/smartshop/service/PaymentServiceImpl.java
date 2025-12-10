@@ -27,8 +27,6 @@ public class PaymentServiceImpl implements PaymentService {
     private final PaymentRepository paymentRepository;
     private final OrderRepository orderRepository;
     private final PaymentMapper paymentMapper;
-
-    // PDF: "ESPÈCES: Limite légale 20,000 DH maximum (Art. 193 CGI)"
     private static final BigDecimal CASH_LIMIT = new BigDecimal("20000");
 
     @Override
@@ -89,7 +87,7 @@ public class PaymentServiceImpl implements PaymentService {
         payment.setStatus(newStatus);
 
         // Set collection date when status becomes COLLECTED
-        if (newStatus == PaymentStatus.ENCAISSE && payment.getCollectionDate() == null) {
+        if (newStatus == PaymentStatus.ENCAISSE  && payment.getCollectionDate() == null) {
             payment.setCollectionDate(LocalDateTime.now());
         }
 

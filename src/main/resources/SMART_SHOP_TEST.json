@@ -1,0 +1,690 @@
+{
+  "info": {
+    "name": "SmartShop - Complete Auto Tests (56 Tests)",
+    "description": "Auto-test all PDF requirements",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080/api"
+    },
+    {
+      "key": "newClientId",
+      "value": ""
+    },
+    {
+      "key": "newOrderId",
+      "value": ""
+    },
+    {
+      "key": "newPaymentId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "PHASE 1 - Authentication",
+      "item": [
+        {
+          "name": "1.1 Login as ADMIN ✅",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has userId', () => pm.expect(pm.response.json().userId).to.exist);",
+                  "pm.test('Role is ADMIN', () => pm.expect(pm.response.json().role).to.eql('ADMIN'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"username\":\"admin\",\"password\":\"admin123\"}"
+            },
+            "url": "{{baseUrl}}/auth/login"
+          }
+        },
+        {
+          "name": "1.2 Login as CLIENT ✅",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Role is CLIENT', () => pm.expect(pm.response.json().role).to.eql('CLIENT'));",
+                  "pm.test('Has clientId', () => pm.expect(pm.response.json().clientId).to.exist);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"username\":\"amine_tech\",\"password\":\"pass123\"}"
+            },
+            "url": "{{baseUrl}}/auth/login"
+          }
+        },
+        {
+          "name": "1.3 Login Wrong Password ❌",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 403', () => pm.response.to.have.status(403));",
+                  "pm.test('Error message exists', () => pm.expect(pm.response.json().message).to.include('Invalid'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"username\":\"admin\",\"password\":\"wrongpass\"}"
+            },
+            "url": "{{baseUrl}}/auth/login"
+          }
+        },
+        {
+          "name": "1.4 Get Current User ✅",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Login first",
+                  "pm.sendRequest({",
+                  "  url: pm.variables.get('baseUrl') + '/auth/login',",
+                  "  method: 'POST',",
+                  "  header: {'Content-Type': 'application/json'},",
+                  "  body: {mode: 'raw', raw: JSON.stringify({username: 'admin', password: 'admin123'})}",
+                  "}, () => {});"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has username', () => pm.expect(pm.response.json().username).to.exist);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/auth/me"
+          }
+        },
+        {
+          "name": "1.5 Logout ✅",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/logout"
+          }
+        }
+      ]
+    },
+    {
+      "name": "PHASE 2 - Client Management",
+      "item": [
+        {
+          "name": "LOGIN ADMIN (prereq)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": ["pm.test('Admin logged in', () => pm.response.to.have.status(200));"]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"username\":\"admin\",\"password\":\"admin123\"}"
+            },
+            "url": "{{baseUrl}}/auth/login"
+          }
+        },
+        {
+          "name": "2.1 Create Client ✅",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Has ID', () => pm.expect(pm.response.json().id).to.exist);",
+                  "pm.test('Tier is BASIC', () => pm.expect(pm.response.json().tier).to.eql('BASIC'));",
+                  "pm.test('TotalOrders is 0', () => pm.expect(pm.response.json().totalOrders).to.eql(0));",
+                  "pm.test('TotalSpent is 0', () => pm.expect(pm.response.json().totalSpent).to.eql(0));",
+                  "pm.collectionVariables.set('newClientId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\":\"AutoTest Company\",\"email\":\"autotest@test.ma\",\"phone\":\"0678901234\",\"address\":\"Rabat\",\"username\":\"autotest_user\",\"password\":\"pass123\"}"
+            },
+            "url": "{{baseUrl}}/clients"
+          }
+        },
+        {
+          "name": "2.2 Create Client - Duplicate Email ❌",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 422', () => pm.response.to.have.status(422));",
+                  "pm.test('Error mentions email', () => pm.expect(pm.response.json().message).to.include('Email already registered'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\":\"Duplicate\",\"email\":\"amine@techsolutions.ma\",\"username\":\"dup\",\"password\":\"pass\"}"
+            },
+            "url": "{{baseUrl}}/clients"
+          }
+        },
+        {
+          "name": "2.3 Get All Clients ✅",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Returns array', () => pm.expect(pm.response.json()).to.be.an('array'));",
+                  "pm.test('Has at least 5 clients', () => pm.expect(pm.response.json().length).to.be.at.least(5));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/clients"
+          }
+        },
+        {
+          "name": "2.4 Get Client by ID ✅",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has tier', () => pm.expect(pm.response.json().tier).to.exist);",
+                  "pm.test('Has stats', () => {",
+                  "  pm.expect(pm.response.json().totalOrders).to.exist;",
+                  "  pm.expect(pm.response.json().totalSpent).to.exist;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/clients/2"
+          }
+        },
+        {
+          "name": "2.8 Update Client ✅",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\":\"Updated Name\",\"email\":\"amine@techsolutions.ma\",\"phone\":\"0612345678\",\"address\":\"Updated Address\"}"
+            },
+            "url": "{{baseUrl}}/clients/1"
+          }
+        },
+        {
+          "name": "2.10 Get Client Order History ✅",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Returns array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/clients/2/orders"
+          }
+        }
+      ]
+    },
+    {
+      "name": "PHASE 3 - Product Management",
+      "item": [
+        {
+          "name": "3.1 Create Product ✅",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Has stock', () => pm.expect(pm.response.json().stock).to.exist);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\":\"Test Product\",\"description\":\"Auto test\",\"unitPrice\":500.00,\"stock\":50}"
+            },
+            "url": "{{baseUrl}}/products"
+          }
+        },
+        {
+          "name": "3.3 Get Products with Pagination ✅",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has pagination', () => {",
+                  "  pm.expect(pm.response.json().content).to.be.an('array');",
+                  "  pm.expect(pm.response.json().totalElements).to.exist;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/products?page=0&size=5"
+          }
+        },
+        {
+          "name": "3.4 Search Products ✅",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/products?search=Laptop&page=0&size=10"
+          }
+        }
+      ]
+    },
+    {
+      "name": "PHASE 4 - Order Calculations (CRITICAL)",
+      "item": [
+        {
+          "name": "4.1 Order BASIC Client (No Discount) ✅",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "const r = pm.response.json();",
+                  "pm.test('SubtotalHT = 300', () => pm.expect(r.subtotalHT).to.eql(300.00));",
+                  "pm.test('Loyalty discount = 0', () => pm.expect(r.loyaltyDiscount).to.eql(0.00));",
+                  "pm.test('AmountHT = 300', () => pm.expect(r.amountHT).to.eql(300.00));",
+                  "pm.test('TVA = 60', () => pm.expect(r.tvaAmount).to.eql(60.00));",
+                  "pm.test('TotalTTC = 360', () => pm.expect(r.totalTTC).to.eql(360.00));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"clientId\":1,\"items\":[{\"productId\":3,\"quantity\":2}]}"
+            },
+            "url": "{{baseUrl}}/orders"
+          }
+        },
+        {
+          "name": "4.2 Order SILVER with Discount ✅",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const r = pm.response.json();",
+                  "pm.test('SubtotalHT = 800', () => pm.expect(r.subtotalHT).to.eql(800.00));",
+                  "pm.test('Loyalty discount = 40 (5%)', () => pm.expect(r.loyaltyDiscount).to.eql(40.00));",
+                  "pm.test('AmountHT = 760', () => pm.expect(r.amountHT).to.eql(760.00));",
+                  "pm.test('TVA = 152', () => pm.expect(r.tvaAmount).to.eql(152.00));",
+                  "pm.test('TotalTTC = 912', () => pm.expect(r.totalTTC).to.eql(912.00));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"clientId\":2,\"items\":[{\"productId\":6,\"quantity\":1}]}"
+            },
+            "url": "{{baseUrl}}/orders"
+          }
+        },
+        {
+          "name": "4.4 Order GOLD with Discount ✅",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const r = pm.response.json();",
+                  "pm.test('SubtotalHT = 1200', () => pm.expect(r.subtotalHT).to.eql(1200.00));",
+                  "pm.test('Loyalty discount = 120 (10%)', () => pm.expect(r.loyaltyDiscount).to.eql(120.00));",
+                  "pm.test('AmountHT = 1080', () => pm.expect(r.amountHT).to.eql(1080.00));",
+                  "pm.test('TVA = 216', () => pm.expect(r.tvaAmount).to.eql(216.00));",
+                  "pm.test('TotalTTC = 1296', () => pm.expect(r.totalTTC).to.eql(1296.00));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"clientId\":3,\"items\":[{\"productId\":2,\"quantity\":1}]}"
+            },
+            "url": "{{baseUrl}}/orders"
+          }
+        },
+        {
+          "name": "4.5 Order PLATINUM Max Discount ✅",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const r = pm.response.json();",
+                  "pm.test('SubtotalHT = 5500', () => pm.expect(r.subtotalHT).to.eql(5500.00));",
+                  "pm.test('Loyalty discount = 825 (15%)', () => pm.expect(r.loyaltyDiscount).to.eql(825.00));",
+                  "pm.test('AmountHT = 4675', () => pm.expect(r.amountHT).to.eql(4675.00));",
+                  "pm.test('TVA = 935', () => pm.expect(r.tvaAmount).to.eql(935.00));",
+                  "pm.test('TotalTTC = 5610', () => pm.expect(r.totalTTC).to.eql(5610.00));",
+                  "pm.collectionVariables.set('newOrderId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"clientId\":4,\"items\":[{\"productId\":1,\"quantity\":1}]}"
+            },
+            "url": "{{baseUrl}}/orders"
+          }
+        },
+        {
+          "name": "4.6 Order with Promo Code ✅",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const r = pm.response.json();",
+                  "pm.test('Has promo discount', () => pm.expect(r.promoDiscount).to.be.above(0));",
+                  "pm.test('Total discount includes both', () => pm.expect(r.totalDiscount).to.eql(r.loyaltyDiscount + r.promoDiscount));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"clientId\":3,\"promoCode\":\"PROMO-TEST\",\"items\":[{\"productId\":2,\"quantity\":1}]}"
+            },
+            "url": "{{baseUrl}}/orders"
+          }
+        },
+        {
+          "name": "4.8 Order Insufficient Stock ❌",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 422', () => pm.response.to.have.status(422));",
+                  "pm.test('Error mentions stock', () => pm.expect(pm.response.json().message).to.include('stock'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"clientId\":1,\"items\":[{\"productId\":1,\"quantity\":999}]}"
+            },
+            "url": "{{baseUrl}}/orders"
+          }
+        },
+        {
+          "name": "4.10 Order No Items ❌",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 422', () => pm.response.to.have.status(422));",
+                  "pm.test('Error mentions items', () => pm.expect(pm.response.json().message).to.include('item'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"clientId\":1,\"items\":[]}"
+            },
+            "url": "{{baseUrl}}/orders"
+          }
+        }
+      ]
+    },
+    {
+      "name": "PHASE 5 - Payment System (CRITICAL)",
+      "item": [
+        {
+          "name": "5.1 Add CASH Payment ✅",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "const r = pm.response.json();",
+                  "pm.test('PaymentNumber is 1', () => pm.expect(r.paymentNumber).to.be.at.least(1));",
+                  "pm.test('Status is PENDING', () => pm.expect(r.status).to.eql('PENDING'));",
+                  "pm.collectionVariables.set('newPaymentId', r.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"amount\":1000.00,\"paymentMethod\":\"CASH\",\"reference\":\"AUTO-TEST-001\"}"
+            },
+            "url": "{{baseUrl}}/orders/{{newOrderId}}/payments"
+          }
+        },
+        {
+          "name": "5.3 CASH Payment > 20,000 DH ❌",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 422', () => pm.response.to.have.status(422));",
+                  "pm.test('Error mentions 20,000 DH limit', () => pm.expect(pm.response.json().message).to.include('20'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"amount\":25000.00,\"paymentMethod\":\"CASH\",\"reference\":\"ERROR\"}"
+            },
+            "url": "{{baseUrl}}/orders/3/payments"
+          }
+        },
+        {
+          "name": "5.6 Update Payment Status ✅",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Status changed to COLLECTED', () => pm.expect(pm.response.json().status).to.eql('COLLECTED'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/payments/{{newPaymentId}}/status?status=COLLECTED"
+          }
+        }
+      ]
+    },
+    {
+      "name": "PHASE 6 - Order Confirmation",
+      "item": [
+        {
+          "name": "6.1 Confirm Order Not Fully Paid ❌",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 422', () => pm.response.to.have.status(422));",
+                  "pm.test('Error mentions payment', () => pm.expect(pm.response.json().message).to.include('paid'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/orders/3/confirm"
+          }
+        },
+        {
+          "name": "6.2 Confirm Fully Paid Order ✅",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Order status is CONFIRMED', () => pm.expect(pm.response.json().status).to.eql('CONFIRMED'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/orders/7/confirm"
+          }
+        },
+        {
+          "name": "6.4 Cancel Order ✅",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Order status is CANCELED', () => pm.expect(pm.response.json().status).to.eql('CANCELED'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/orders/4/cancel"
+          }
+        }
+      ]
+    }
+  ]
+}

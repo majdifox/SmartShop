@@ -4,6 +4,7 @@ import org.majdifoxx.smartshop.dto.request.OrderRequestDTO;
 import org.majdifoxx.smartshop.dto.response.OrderResponseDTO;
 import org.majdifoxx.smartshop.entity.Order;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public interface OrderService {
@@ -14,4 +15,8 @@ public interface OrderService {
     List<OrderResponseDTO> getAllOrders();
     List<OrderResponseDTO> getClientOrders(Long clientId);
     Order getOrderEntity(Long id);
+
+
+
+
 }

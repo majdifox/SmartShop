@@ -1,0 +1,347 @@
+{
+  "info": {
+    "_postman_id": "smartshop-updated",
+    "name": "SmartShop - Complete Endpoints Test (Updated)",
+    "description": "Tests ALL endpoints with pass/fail after changes. Covers Auth, Clients, Products, Orders, Payments, PromoCodes. Run full collection.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {"key": "baseUrl", "value": "http://localhost:8080/api"},
+    {"key": "newClientId", "value": ""},
+    {"key": "newProductId", "value": ""},
+    {"key": "newOrderId", "value": ""},
+    {"key": "newPaymentId", "value": ""},
+    {"key": "newPromoCode", "value": ""},
+    {"key": "uniqueEmail", "value": ""},
+    {"key": "uniqueUsername", "value": ""},
+    {"key": "adminToken", "value": ""},
+    {"key": "clientIdKnown", "value": "2"}
+  ],
+  "item": [
+    {
+      "name": "0. Prerequisites - Login Admin",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {"mode": "raw", "raw": "{\"username\":\"admin\",\"password\":\"admin123\"}"},
+        "url": "{{baseUrl}}/auth/login"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Admin Login Success', () => { pm.response.to.have.status(200); pm.environment.set('adminSession', 'true'); });",
+              "pm.test('Role ADMIN', () => { pm.expect(pm.response.json().role).to.eql('ADMIN'); })"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "PHASE 1 - Auth Endpoints",
+      "item": [
+        {
+          "name": "1.1 Login Client ✅",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\"username\":\"amine_tech\",\"password\":\"pass123\"}"},
+            "url": "{{baseUrl}}/auth/login"
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Status 200 & CLIENT role', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().role).to.eql('CLIENT'); });"] }}]
+        },
+        {
+          "name": "1.2 GET /auth/me (Admin) ✅",
+          "request": {"method": "GET", "url": "{{baseUrl}}/auth/me"},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('200 & user data', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().username).to.exist; });"] }}]
+        },
+        {
+          "name": "1.3 Logout ✅",
+          "request": {"method": "POST", "url": "{{baseUrl}}/auth/logout"},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('200 Logout', () => pm.response.to.have.status(200));"] }}]
+        },
+        {
+          "name": "1.4 /me after logout ❌",
+          "event": [{"listen": "prerequest", "script": {"exec": ["pm.sendRequest({ url: '{{baseUrl}}/auth/logout', method: 'POST' });"] }}],
+          "request": {"method": "GET", "url": "{{baseUrl}}/auth/me"},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('401/403 after logout', () => pm.response.to.have.status.oneOf([401,403]));"] }}]
+        }
+      ]
+    },
+    {
+      "name": "PHASE 2 - Clients",
+      "item": [
+        {
+          "name": "2.0 Login Admin Prereq",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\"username\":\"admin\",\"password\":\"admin123\"}"},
+            "url": "{{baseUrl}}/auth/login"
+          }
+        },
+        {
+          "name": "2.1 Create Client ✅",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {"exec": ["const ts = Date.now(); pm.collectionVariables.set('uniqueEmail', `test${ts}@ex.com`); pm.collectionVariables.set('uniqueUsername', `test${ts}`);"]}
+            },
+            {
+              "listen": "test",
+              "script": {"exec": ["pm.test('201 Created', () => pm.response.to.have.status(201)); pm.collectionVariables.set('newClientId', pm.response.json().id); pm.test('BASIC tier', () => pm.expect(pm.response.json().tier).to.eql('BASIC'));"]}
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\"name\":\"Test Client\",\"email\":\"{{uniqueEmail}}\",\"phone\":\"+212600000000\",\"address\":\"Test Addr\",\"username\":\"{{uniqueUsername}}\",\"password\":\"testpass\"}"},
+            "url": "{{baseUrl}}/clients"
+          }
+        },
+        {
+          "name": "2.2 Create Duplicate Email ❌",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\"name\":\"Dup\",\"email\":\"amine@techsolutions.ma\",\"username\":\"duptest\",\"password\":\"pass\"}"},
+            "url": "{{baseUrl}}/clients"
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('422 Duplicate', () => { pm.response.to.have.status(422); pm.expect(pm.response.text()).to.include('email'); });"] }}]
+        },
+        {
+          "name": "2.3 GET All Clients ✅",
+          "request": {"method": "GET", "url": "{{baseUrl}}/clients"},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('200 Array >=3', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().length).to.be.above(2); });"] }}]
+        },
+        {
+          "name": "2.4 GET Client/{id} ✅",
+          "request": {"method": "GET", "url": "{{baseUrl}}/clients/{{clientIdKnown}}"},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('200 details', () => pm.response.to.have.status(200));"] }}]
+        },
+        {
+          "name": "2.5 UPDATE Client ✅",
+          "request": {
+            "method": "PUT",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\"name\":\"Updated\",\"phone\":\"+212611111111\"}"},
+            "url": "{{baseUrl}}/clients/{{clientIdKnown}}"
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('200 Updated', () => pm.response.to.have.status(200));"] }}]
+        },
+        {
+          "name": "2.6 DELETE Client ✅",
+          "request": {"method": "DELETE", "url": "{{baseUrl}}/clients/{{newClientId}}"},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('200 Deleted', () => pm.response.to.have.status(200));"] }}]
+        },
+        {
+          "name": "2.7 Client Orders ✅",
+          "request": {"method": "GET", "url": "{{baseUrl}}/clients/{{clientIdKnown}}/orders"},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('200 Orders array', () => { pm.response.to.have.status(200); pm.expect(pm.response.json()).to.be.an('array'); });"] }}]
+        },
+        {
+          "name": "2.8 Non-Admin Create Client ❌",
+          "event": [{"listen": "prerequest", "script": {"exec": ["pm.sendRequest({method:'POST', url: '{{baseUrl}}/auth/login', header: {'Content-Type':'application/json'}, body: {raw: JSON.stringify({username:'amine_tech', password:'pass123'})}});"] }}],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\"name\":\"Client Try\",\"email\":\"client@test.com\",\"username\":\"clienttest\",\"password\":\"pass\"}"},
+            "url": "{{baseUrl}}/clients"
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('403 Unauthorized', () => pm.response.to.have.status(403));"] }}]
+        }
+      ]
+    },
+    {
+      "name": "PHASE 3 - Products",
+      "item": [
+        {
+          "name": "3.0 Admin Login Prereq",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\"username\":\"admin\",\"password\":\"admin123\"}"},
+            "url": "{{baseUrl}}/auth/login"
+          }
+        },
+        {
+          "name": "3.1 Create Product ✅",
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('201 Created', () => pm.response.to.have.status(201)); pm.collectionVariables.set('newProductId', pm.response.json().id);"] }}],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\"name\":\"Test Prod\",\"description\":\"Auto\",\"unitPrice\":100.0,\"stock\":50}"},
+            "url": "{{baseUrl}}/products"
+          }
+        },
+        {
+          "name": "3.2 GET Product/{id} ✅",
+          "request": {"method": "GET", "url": "{{baseUrl}}/products/{{newProductId}}"},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('200 Details', () => pm.response.to.have.status(200));"] }}]
+        },
+        {
+          "name": "3.3 List Products Paginated ✅",
+          "request": {"method": "GET", "url": "{{baseUrl}}/products?page=0&size=5"},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('200 Page', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().content).to.exist; });"] }}]
+        },
+        {
+          "name": "3.4 Search Products ✅",
+          "request": {"method": "GET", "url": "{{baseUrl}}/products?search=Laptop"},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('200 Search', () => pm.response.to.have.status(200));"] }}]
+        },
+        {
+          "name": "3.5 Update Product ✅",
+          "request": {
+            "method": "PUT",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\"name\":\"Updated Prod\",\"unitPrice\":150.0}"},
+            "url": "{{baseUrl}}/products/{{newProductId}}"
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('200 Updated', () => pm.response.to.have.status(200));"] }}]
+        },
+        {
+          "name": "3.6 Delete Product ✅",
+          "request": {"method": "DELETE", "url": "{{baseUrl}}/products/{{newProductId}}"},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('200 Deleted', () => pm.response.to.have.status(200));"] }}]
+        }
+      ]
+    },
+    {
+      "name": "PHASE 4 - Orders & Calculations",
+      "item": [
+        {
+          "name": "4.1 Create Order BASIC (No Disc) ✅",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\"clientId\":1,\"items\":[{\"productId\":3,\"quantity\":2}]}"},
+            "url": "{{baseUrl}}/orders"
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('201 PENDING calc correct', () => { pm.response.to.have.status(201); const r=pm.response.json(); pm.expect(r.subtotalHT).to.eql(300); pm.expect(r.loyaltyDiscount).to.eql(0); pm.expect(r.totalTTC).to.eql(360); pm.collectionVariables.set('newOrderId', r.id); });"] }}]
+        },
+        {
+          "name": "4.2 Order w/ Promo ✅",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\"clientId\":2,\"promoCode\":\"PROMO-TEST\",\"items\":[{\"productId\":6,\"quantity\":1}]}"},
+            "url": "{{baseUrl}}/orders"
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Promo applied', () => { pm.response.to.have.status(201); pm.expect(pm.response.json().promoDiscount).above(0); });"] }}]
+        },
+        {
+          "name": "4.3 Insufficient Stock ❌",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\"clientId\":1,\"items\":[{\"productId\":1,\"quantity\":999}]}"},
+            "url": "{{baseUrl}}/orders"
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('422 Stock', () => { pm.response.to.have.status(422); pm.expect(pm.response.text()).to.include('stock'); });"] }}]
+        },
+        {
+          "name": "4.4 GET All Orders ✅",
+          "request": {"method": "GET", "url": "{{baseUrl}}/orders"},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('200 Array', () => pm.response.to.have.status(200));"] }}]
+        },
+        {
+          "name": "4.5 GET Order/{id} ✅",
+          "request": {"method": "GET", "url": "{{baseUrl}}/orders/{{newOrderId}}"},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('200 Order', () => pm.response.to.have.status(200));"] }}]
+        }
+      ]
+    },
+    {
+      "name": "PHASE 5 - Payments",
+      "item": [
+        {
+          "name": "5.1 Add Payment CASH ✅",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\"amount\":360.0,\"paymentMethod\":\"CASH\",\"reference\":\"TEST-REF\"}"},
+            "url": "{{baseUrl}}/orders/{{newOrderId}}/payments"
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('201 Pending', () => { pm.response.to.have.status(201); pm.expect(pm.response.json().status).to.eql('PENDING'); pm.collectionVariables.set('newPaymentId', pm.response.json().id); });"] }}]
+        },
+        {
+          "name": "5.2 CASH >20000 ❌",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\"amount\":25000,\"paymentMethod\":\"CASH\",\"reference\":\"TOO-BIG\"}"},
+            "url": "{{baseUrl}}/orders/1/payments"
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('422 Limit', () => { pm.response.to.have.status(422); pm.expect(pm.response.text()).to.include('20'); });"] }}]
+        },
+        {
+          "name": "5.3 Update Status to COLLECTED ✅",
+          "request": {"method": "PUT", "url": "{{baseUrl}}/payments/{{newPaymentId}}/status?status=COLLECTED"},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('200 Collected', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().status).to.eql('COLLECTED'); });"] }}]
+        },
+        {
+          "name": "5.4 GET Order Payments ✅",
+          "request": {"method": "GET", "url": "{{baseUrl}}/orders/{{newOrderId}}/payments"},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('200 List', () => pm.response.to.have.status(200));"] }}]
+        },
+        {
+          "name": "5.5 GET Pending Payments ✅",
+          "request": {"method": "GET", "url": "{{baseUrl}}/payments/pending"},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('200 Pending', () => pm.response.to.have.status(200));"] }}]
+        },
+        {
+          "name": "5.6 GET Payment/{id} ✅",
+          "request": {"method": "GET", "url": "{{baseUrl}}/payments/{{newPaymentId}}"},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('200 Details', () => pm.response.to.have.status(200));"] }}]
+        }
+      ]
+    },
+    {
+      "name": "PHASE 6 - PromoCodes",
+      "item": [
+        {
+          "name": "6.1 Create Promo ✅",
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('200 Created', () => { pm.response.to.have.status(200); pm.collectionVariables.set('newPromoCode', pm.response.json().code); });"] }}],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\"code\":\"TEST-PROMO-\" + Math.random().toString(36).substr(2, 5)}"},
+            "url": "{{baseUrl}}/promo-codes"
+          }
+        },
+        {
+          "name": "6.2 GET All Promo ✅",
+          "request": {"method": "GET", "url": "{{baseUrl}}/promo-codes"},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('200 List', () => pm.response.to.have.status(200));"] }}]
+        },
+        {
+          "name": "6.3 Non-Admin Create Promo ❌",
+          "event": [{"listen": "prerequest", "script": {"exec": ["pm.sendRequest({method:'POST', url: '{{baseUrl}}/auth/login', body: {raw: JSON.stringify({username:'amine_tech',password:'pass123'})}, header:{'Content-Type':'application/json'}});"] }}],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\"code\":\"CLIENT-PROMO\"}"},
+            "url": "{{baseUrl}}/promo-codes"
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('403', () => pm.response.to.have.status(403));"] }}]
+        }
+      ]
+    },
+    {
+      "name": "PHASE 7 - Order Lifecycle",
+      "item": [
+        {
+          "name": "7.1 Confirm Not Paid ❌",
+          "request": {"method": "PUT", "url": "{{baseUrl}}/orders/{{newOrderId}}/confirm"},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('422 Not Paid', () => { pm.response.to.have.status(422); pm.expect(pm.response.text()).to.include('paid'); });"] }}]
+        },
+        {
+          "name": "7.2 Cancel Order ✅",
+          "request": {"method": "PUT", "url": "{{baseUrl}}/orders/{{newOrderId}}/cancel"},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('200 CANCELED', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().status).to.eql('CANCELED'); });"] }}]
+        }
+      ]
+    }
+  ]
+}

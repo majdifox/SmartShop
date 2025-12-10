@@ -1,0 +1,391 @@
+{
+  "info": {
+    "name": "SmartShop",
+    "description": "SmartShop",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080/api"
+    },
+    {
+      "key": "adminToken",
+      "value": ""
+    },
+    {
+      "key": "clientId",
+      "value": ""
+    },
+    {
+      "key": "orderId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Authentication",
+      "item": [
+        {
+          "name": "Login as ADMIN",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/login"
+          }
+        },
+        {
+          "name": "Login as CLIENT (Amine)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"amine_tech\",\n  \"password\": \"pass123\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/login"
+          }
+        },
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/auth/me"
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/logout"
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Clients (ADMIN only)",
+      "item": [
+        {
+          "name": "Create Client",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"New Tech Company\",\n  \"email\": \"newtech@example.ma\",\n  \"phone\": \"0667890123\",\n  \"address\": \"Casablanca, Anfa\",\n  \"username\": \"newtech_user\",\n  \"password\": \"pass123\"\n}"
+            },
+            "url": "{{baseUrl}}/clients"
+          }
+        },
+        {
+          "name": "Get All Clients",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/clients"
+          }
+        },
+        {
+          "name": "Get Client by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/clients/1"
+          }
+        },
+        {
+          "name": "Update Client",
+          "request": {
+            "method": "PUT",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Amine Tech Solutions SARL\",\n  \"email\": \"amine@techsolutions.ma\",\n  \"phone\": \"0612345678\",\n  \"address\": \"Casablanca, Maarif - Updated\"\n}"
+            },
+            "url": "{{baseUrl}}/clients/1"
+          }
+        },
+        {
+          "name": "Get Client Orders (History)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/clients/2/orders"
+          }
+        },
+        {
+          "name": "Delete Client",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/clients/999"
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Products",
+      "item": [
+        {
+          "name": "Create Product (ADMIN)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Gaming Headset RGB\",\n  \"description\": \"7.1 Surround sound, noise cancelling mic\",\n  \"unitPrice\": 550.00,\n  \"stock\": 35\n}"
+            },
+            "url": "{{baseUrl}}/products"
+          }
+        },
+        {
+          "name": "Get All Products (Paginated)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/products?page=0&size=10",
+              "query": [
+                {"key": "page", "value": "0"},
+                {"key": "size", "value": "10"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Search Products",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/products?search=Laptop&page=0&size=10",
+              "query": [
+                {"key": "search", "value": "Laptop"},
+                {"key": "page", "value": "0"},
+                {"key": "size", "value": "10"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Product by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/products/1"
+          }
+        },
+        {
+          "name": "Update Product (ADMIN)",
+          "request": {
+            "method": "PUT",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Laptop HP ProBook 450 G9\",\n  \"description\": \"Intel Core i5 12th Gen, 16GB RAM, 512GB SSD\",\n  \"unitPrice\": 5800.00,\n  \"stock\": 20\n}"
+            },
+            "url": "{{baseUrl}}/products/1"
+          }
+        },
+        {
+          "name": "Delete Product - Soft Delete (ADMIN)",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/products/11"
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Orders",
+      "item": [
+        {
+          "name": "Create Order - BASIC Client (No Discount)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"clientId\": 1,\n  \"items\": [\n    {\"productId\": 3, \"quantity\": 2},\n    {\"productId\": 5, \"quantity\": 1}\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/orders"
+          }
+        },
+        {
+          "name": "Create Order - SILVER with Discount",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"clientId\": 2,\n  \"items\": [\n    {\"productId\": 6, \"quantity\": 1}\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/orders"
+          }
+        },
+        {
+          "name": "Create Order - GOLD with Promo Code",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"clientId\": 3,\n  \"promoCode\": \"PROMO-XY99\",\n  \"items\": [\n    {\"productId\": 2, \"quantity\": 1},\n    {\"productId\": 7, \"quantity\": 2}\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/orders"
+          }
+        },
+        {
+          "name": "Create Order - PLATINUM Maximum Discount",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"clientId\": 4,\n  \"items\": [\n    {\"productId\": 1, \"quantity\": 1}\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/orders"
+          }
+        },
+        {
+          "name": "Create Order - Insufficient Stock (REJECTED)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"clientId\": 1,\n  \"items\": [\n    {\"productId\": 1, \"quantity\": 999}\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/orders"
+          }
+        },
+        {
+          "name": "Get All Orders (ADMIN)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/orders"
+          }
+        },
+        {
+          "name": "Get Order by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/orders/1"
+          }
+        },
+        {
+          "name": "Confirm Order (After Full Payment)",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/orders/7/confirm"
+          }
+        },
+        {
+          "name": "Confirm Order - ERROR (Not Fully Paid)",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/orders/3/confirm"
+          }
+        },
+        {
+          "name": "Cancel Order",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/orders/4/cancel"
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Payments",
+      "item": [
+        {
+          "name": "Add Payment - CASH",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 300.00,\n  \"paymentMethod\": \"CASH\",\n  \"reference\": \"REU-004\"\n}"
+            },
+            "url": "{{baseUrl}}/orders/4/payments"
+          }
+        },
+        {
+          "name": "Add Payment - CHECK (Deferred)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 120.00,\n  \"paymentMethod\": \"CHECK\",\n  \"reference\": \"CHQ-99999\",\n  \"bankName\": \"BMCE Bank\",\n  \"dueDate\": \"2025-12-15\"\n}"
+            },
+            "url": "{{baseUrl}}/orders/4/payments"
+          }
+        },
+        {
+          "name": "Add Payment - CASH Exceeds Limit (ERROR)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 25000.00,\n  \"paymentMethod\": \"CASH\",\n  \"reference\": \"REU-ERROR\"\n}"
+            },
+            "url": "{{baseUrl}}/orders/3/payments"
+          }
+        },
+        {
+          "name": "Add Payment - WIRE_TRANSFER",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 530.00,\n  \"paymentMethod\": \"WIRE_TRANSFER\",\n  \"reference\": \"VIR-2025-11-30-555\",\n  \"bankName\": \"Attijariwafa Bank\"\n}"
+            },
+            "url": "{{baseUrl}}/orders/3/payments"
+          }
+        },
+        {
+          "name": "Get Order Payments",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/orders/3/payments"
+          }
+        },
+        {
+          "name": "Update Payment Status to COLLECTED",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/payments/5/status?status=COLLECTED",
+              "query": [{"key": "status", "value": "COLLECTED"}]
+            }
+          }
+        },
+        {
+          "name": "Update Payment Status to REJECTED",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/payments/5/status?status=REJECTED",
+              "query": [{"key": "status", "value": "REJECTED"}]
+            }
+          }
+        },
+        {
+          "name": "Get Pending Payments",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/payments/pending"
+          }
+        },
+        {
+          "name": "Get Payment by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/payments/1"
+          }
+        }
+      ]
+    }
+  ]
+}
