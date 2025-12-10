@@ -63,7 +63,7 @@ public class PaymentServiceImpl implements PaymentService {
                 .paymentNumber(nextPaymentNumber)
                 .amount(request.getAmount())
                 .paymentMethod(request.getPaymentMethod())
-                .status(PaymentStatus.PENDING)
+                .status(PaymentStatus.EN_ATTENTE)
                 .reference(request.getReference())
                 .bankName(request.getBankName())
                 .dueDate(request.getDueDate())
@@ -89,7 +89,7 @@ public class PaymentServiceImpl implements PaymentService {
         payment.setStatus(newStatus);
 
         // Set collection date when status becomes COLLECTED
-        if (newStatus == PaymentStatus.COLLECTED && payment.getCollectionDate() == null) {
+        if (newStatus == PaymentStatus.ENCAISSE && payment.getCollectionDate() == null) {
             payment.setCollectionDate(LocalDateTime.now());
         }
 
@@ -107,7 +107,7 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     public List<PaymentResponseDTO> getPendingPayments() {
-        List<Payment> payments = paymentRepository.findByStatus(PaymentStatus.PENDING);
+        List<Payment> payments = paymentRepository.findByStatus(PaymentStatus.EN_ATTENTE);
         return payments.stream()
                 .map(paymentMapper::toResponseDTO)
                 .toList();

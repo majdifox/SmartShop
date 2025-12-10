@@ -20,25 +20,30 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public LoginResponseDTO login(LoginRequestDTO request) {
         User user = userRepository.findByUsername(request.getUsername())
-                .orElseThrow(() -> new UnauthorizedException("Invalid username or password"));
+                .orElseThrow(() -> new UnauthorizedException("Invalid credentials"));
 
-        // Simple password check (in production use BCrypt)
         if (!user.getPassword().equals(request.getPassword())) {
-            throw new UnauthorizedException("Invalid username or password");
+            throw new UnauthorizedException("Invalid credentials");
         }
 
-        // Store in HTTP session
+        // Store in session
         httpSession.setAttribute("userId", user.getId());
-        httpSession.setAttribute("userRole", user.getRole());
+
+        // FIX: Only get clientId if user is CLIENT
+        Long clientId = null;
+        if (user.getRole() == UserRole.CLIENT && user.getClient() != null) {
+            clientId = user.getClient().getId();
+        }
 
         return LoginResponseDTO.builder()
                 .userId(user.getId())
                 .username(user.getUsername())
                 .role(user.getRole())
-                .clientId(user.getClient() != null ? user.getClient().getId() : null)
+                .clientId(clientId)  // ← Will be null for ADMIN, that's OK
                 .message("Login successful")
                 .build();
     }
+
 
     @Override
     public void logout() {
