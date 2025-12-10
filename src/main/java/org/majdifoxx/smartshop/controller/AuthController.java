@@ -10,6 +10,9 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Authentication endpoints
  * PDF: "Authentification par HTTP Session (login/logout)"
@@ -46,8 +49,16 @@ public class AuthController {
      * Gets current logged-in user info
      */
     @GetMapping("/me")
-    public ResponseEntity<User> getCurrentUser() {
+    public ResponseEntity<Map<String, Object>> getCurrentUser() {
         User user = authService.getCurrentUser();
-        return ResponseEntity.ok(user);
+        Map<String, Object> response = new HashMap<>();
+        response.put("id", user.getId());
+        response.put("username", user.getUsername());
+        response.put("role", user.getRole().toString());
+        if (user.getClient() != null) {
+            response.put("clientId", user.getClient().getId());
+        }
+        return ResponseEntity.ok(response);
     }
+
 }
